@@ -1,0 +1,205 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						4
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.15.0"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "thirdparty/glad",
+					"jsonFile" : "directory-thirdparty.glad-6931419773fecaac29b8.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "thirdparty/glad",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "thirdparty/glfw-3.3.2",
+					"childIndexes" : 
+					[
+						3
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-thirdparty.glfw-3.3.2-1078959d200aca6cb076.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 2,
+					"source" : "thirdparty/glfw-3.3.2",
+					"targetIndexes" : 
+					[
+						4
+					]
+				},
+				{
+					"build" : "thirdparty/glfw-3.3.2/src",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-thirdparty.glfw-3.3.2.src-9831434e23bcdbe1e921.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 2,
+					"source" : "thirdparty/glfw-3.3.2/src",
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"build" : "thirdparty/fmt-7.0.3",
+					"jsonFile" : "directory-thirdparty.fmt-7.0.3-dd0dc9a33d9c65471793.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.1.0"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 3,
+					"source" : "thirdparty/fmt-7.0.3",
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"name" : "",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "453-skeleton",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "Glad",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2,
+						3
+					],
+					"name" : "GLFW",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						3,
+						4
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						4
+					],
+					"name" : "FMT",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "453-skeleton::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-453-skeleton-9ffab81d146a6e7e0264.json",
+					"name" : "453-skeleton",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "fmt::@2c61785717895844583f",
+					"jsonFile" : "target-fmt-8fab0aa74a0986810a40.json",
+					"name" : "fmt",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "glad::@140c1f658771f9cc4abc",
+					"jsonFile" : "target-glad-2078ee8c0c66f39149e0.json",
+					"name" : "glad",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "glfw::@c8db1781ba139d98a588",
+					"jsonFile" : "target-glfw-24f5fc575eadfdbbaa51.json",
+					"name" : "glfw",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "uninstall::@438bdad978d0008df4cd",
+					"jsonFile" : "target-uninstall-46c46ab4fa4256a0f330.json",
+					"name" : "uninstall",
+					"projectIndex" : 2
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/user/453-skeleton-updated",
+		"source" : "/home/user/453-skeleton-updated"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 4
+	}
+}
