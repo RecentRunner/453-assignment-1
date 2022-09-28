@@ -23,14 +23,12 @@ public:
     // Press 'R' to refresh/recompile shader
 	virtual void keyCallback(int key, int scancode, int action, int mods) {
 		if (key == GLFW_KEY_R && action == GLFW_PRESS) {
-			shader.recompile();
+			cout << "R" << endl;
+            shader.recompile();
 		}
-	}
-
-    // Press 'R' to refresh/recompile shader
-	virtual void keyCallback2(int key, int scancode, int action, int mods) {
-		if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
-			shader.recompile();
+       	if (key == GLFW_KEY_L && action == GLFW_PRESS) {
+			cout << "L" << endl;
+            shader.recompile();
 		}
 	}
 
@@ -38,6 +36,7 @@ private:
 	ShaderProgram& shader;
 };
 
+// Draw the triangle given 3 positions and color
 GPU_Geometry drawTriangle(vec3 v1,vec3 v2,vec3 v3,vec3 color){
  	// GEOMETRY
 	CPU_Geometry cpuGeom;
@@ -58,6 +57,7 @@ GPU_Geometry drawTriangle(vec3 v1,vec3 v2,vec3 v3,vec3 color){
     return gpuGeom;
 }
 
+// Draw sierpinsky given the number of recursions
 GPU_Geometry sierpinsky(int n){
     double dwn_trns = 0.2;
     
@@ -109,7 +109,7 @@ int main() {
 
 	// CALLBACKS
 	window.setCallbacks(std::make_shared<MyCallbacks>(shader)); // can also update callbacks to new ones
-
+    
     GPU_Geometry sierpinksi = sierpinsky(0);
 
     // RENDER LOOP
