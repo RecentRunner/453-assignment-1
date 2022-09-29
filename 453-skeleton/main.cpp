@@ -20,7 +20,7 @@ int n = 0;
 
 // Callbacks are for keyboard controls
 class MyCallbacks : public CallbackInterface {
-
+    public:
 	MyCallbacks(ShaderProgram& shader) : shader(shader) {}
     
     // Press 'R' to refresh/recompile shader
@@ -37,6 +37,7 @@ class MyCallbacks : public CallbackInterface {
 		}
 	}
 
+    private:
 	ShaderProgram& shader;
 };
 
@@ -119,8 +120,7 @@ int main() {
     vec3 top = vec3(cos(((2*M_PI)/3)+(M_PI/2)), sin(((2*M_PI)/3)+(M_PI/2))-dwn_trns, 0.f); // Top
 
 
-    int drawNum = 0;
-
+    int tempN = -200;
         
     // RENDER LOOP
 	while (!window.shouldClose()) {
@@ -133,8 +133,13 @@ int main() {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear color and depth buffer  
         
-		drawNum += sierpinsky(bottomLeft,bottomRight,top,n,cpuGeom,gpuGeom);
-        glDrawArrays(GL_TRIANGLES, 0, drawNum);
+        if(n != tempN){
+	        cpuGeom.verts.clear();
+            cpuGeom.cols.clear();
+            sierpinsky(bottomLeft,bottomRight,top,n,cpuGeom,gpuGeom); 
+        }
+        tempN=n;
+        glDrawArrays(GL_TRIANGLES, 0, (int)cpuGeom.verts.size());
 		glDisable(GL_FRAMEBUFFER_SRGB); // disable sRGB for things like imgui
         
         window.swapBuffers(); // Swapping the double buffer
