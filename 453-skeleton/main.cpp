@@ -120,7 +120,7 @@ int main() {
     vec3 top = vec3(cos(((2*M_PI)/3)+(M_PI/2)), sin(((2*M_PI)/3)+(M_PI/2))-dwn_trns, 0.f); // Top
 
 
-    int tempN = -200;
+    int tempN = -1; // Setting the tempN value to something which isn't default
         
     // RENDER LOOP
 	while (!window.shouldClose()) {
