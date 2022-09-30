@@ -17,24 +17,42 @@ using namespace std;
 using namespace glm;
 
 int n = 0;
+int fractal = 1;
 
 // Callbacks are for keyboard controls
 class MyCallbacks : public CallbackInterface {
     public:
 	MyCallbacks(ShaderProgram& shader) : shader(shader) {}
     
-    // Press 'R' to refresh/recompile shader
+    
 	virtual void keyCallback(int key, int scancode, int action, int mods) {
-		if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
-			cout << "LEFT" << endl;
-            n--;
-            shader.recompile();
-		}
-       	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
-			cout << "RIGHT" << endl;
-            n++;
-            shader.recompile();
-		}
+	    if (action == GLFW_PRESS || action == GLFW_REPEAT){
+            // Press 'R' to refresh/recompile shaders
+            if(key == GLFW_KEY_R){
+                cout << "Recompile" << endl;
+                shader.recompile();
+            }
+            // Decrement n
+            if (key == GLFW_KEY_LEFT && n > 0) {
+                n--;
+			    cout << "Left n: " << n << endl;
+		    }
+            // Increment n
+       	    if (key == GLFW_KEY_RIGHT) {
+                n++;
+			    cout << "Right n: " << n << endl;
+		    }
+            // Switch to next fractal
+            if (key == GLFW_KEY_UP){
+                fractal++;
+                cout << "Fractal: " << fractal << endl; 
+            }
+            // Revert to previous fractal
+            if (key == GLFW_KEY_DOWN && fractal > 1){
+                fractal--;
+                cout << "Fractal: " << fractal << endl; 
+            }
+        }
 	}
 
     private:
@@ -46,7 +64,7 @@ double randomColor(){
 }
 
 // Draw the triangle given 3 positions and color
-int drawTriangle(vec3 bottomLeft,vec3 bottomRight,vec3 top,vec3 color, CPU_Geometry &cpuGeom, GPU_Geometry &gpuGeom){
+void drawTriangle(vec3 bottomLeft,vec3 bottomRight,vec3 top,vec3 color, CPU_Geometry &cpuGeom, GPU_Geometry &gpuGeom){
 
     cpuGeom.verts.push_back(bottomLeft);
     cpuGeom.verts.push_back(bottomRight);
@@ -59,40 +77,38 @@ int drawTriangle(vec3 bottomLeft,vec3 bottomRight,vec3 top,vec3 color, CPU_Geome
 
 	gpuGeom.setVerts(cpuGeom.verts); // Send vertices to GPU 
 	gpuGeom.setCols(cpuGeom.cols); // Send colors to GPU
-    return 3; 
 }
 
 // Draw sierpinsky given the number of recursions also returns number of vertices
-int sierpinsky(vec3 a, vec3 c, vec3 b, int n, CPU_Geometry &cpuGeom, GPU_Geometry &gpuGeom){
-    int drawNum = 0;
-
+void sierpinsky(vec3 a, vec3 c, vec3 b, int n, CPU_Geometry &cpuGeom, GPU_Geometry &gpuGeom){
     if(n>0){
         //Split points on triangle to midpoints
         vec3 d = vec3((b.x+a.x)/2,(b.y+a.y)/2,0.0); // between top and left
         vec3 e = vec3((b.x+c.x)/2,(b.y+c.y)/2,0.0); // between top and right
         vec3 f = vec3((a.x+c.x)/2,(a.y+c.y)/2,0.0); // between left and right
         
-        drawNum += sierpinsky(d,b,e,n-1, cpuGeom, gpuGeom);
-        drawNum += sierpinsky(a,d,f,n-1, cpuGeom, gpuGeom);
-        drawNum += sierpinsky(f,e,c,n-1, cpuGeom, gpuGeom);
+        sierpinsky(d,b,e,n-1, cpuGeom, gpuGeom);
+        sierpinsky(a,d,f,n-1, cpuGeom, gpuGeom);
+        sierpinsky(f,e,c,n-1, cpuGeom, gpuGeom);
     }
     else{
-        drawNum += drawTriangle(a,c,b,vec3(randomColor(),randomColor(),randomColor()), cpuGeom, gpuGeom);
-    }
-    return drawNum;
+        drawTriangle(a,c,b,vec3(randomColor(),randomColor(),randomColor()), cpuGeom, gpuGeom);
+    } 
+}
+
+void drawLine(vec3 a, vec3 b){
+}
+
+void uniformTriangleMassCenter(vec3 a, vec3 c, vec3 b, int n, CPU_Geometry &cpuGeom, GPU_Geometry &gpuGeom){
 }
 
 void kochSnowflake(int n){
 } 
 
-void uniformTriangleMassCenter(int n){
-}
-
 void dragonCurve(int n){
 }
 
-void drawLine(vec3 a, vec3 b){
-}
+
 
 
 int main() {
@@ -110,36 +126,92 @@ int main() {
 	// CALLBACKS
 	window.setCallbacks(std::make_shared<MyCallbacks>(shader)); // can also update callbacks to new ones
     
-    CPU_Geometry cpuGeom;
-    GPU_Geometry gpuGeom;   
+    CPU_Geometry cpuGeomSier;
+    GPU_Geometry gpuGeomSier;
 
-    // Sierpinsky's Triangle
+    CPU_Geometry cpuGeomUMT;
+    GPU_Geometry gpuGeomUMT;
+
     double dwn_trns = 0.2;
+    
+    // Sierpinsky's Triangle
     vec3 bottomLeft = vec3(cos(M_PI/2), sin(M_PI/2)-dwn_trns, 0.f); // Bottom left
     vec3 bottomRight = vec3(cos((4*M_PI)/3+(M_PI/2)), sin((4*M_PI)/3+(M_PI/2))-dwn_trns, 0.f); // Bottom right
     vec3 top = vec3(cos(((2*M_PI)/3)+(M_PI/2)), sin(((2*M_PI)/3)+(M_PI/2))-dwn_trns, 0.f); // Top
 
 
     int tempN = -1; // Setting the tempN value to something which isn't default
-        
+    int tempFractal = -1; // Setting the tempN value to something which isn't default
+    
     // RENDER LOOP
 	while (!window.shouldClose()) {
 		glfwPollEvents(); // Refresh screen
 
-		shader.use();
-		gpuGeom.bind(); // Bind gpu geometry to OpenGL for use
-
 		glEnable(GL_FRAMEBUFFER_SRGB); // Enable framebuffer
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear color and depth buffer  
         
-        if(n != tempN){
-	        cpuGeom.verts.clear();
-            cpuGeom.cols.clear();
-            sierpinsky(bottomLeft,bottomRight,top,n,cpuGeom,gpuGeom); 
+        if(fractal == 1){ // Sierpinsky
+            if(n != tempN || fractal != tempFractal){ // Don't render unless something changed
+                cout << "Sierpinsky's Triangle" << endl;
+                shader.use();
+                gpuGeomSier.bind(); // Bind gpu geometry to OpenGL for use
+
+                // Clear the cpu geometry (all the colors and vertices)
+                cpuGeomSier.verts.clear();
+                cpuGeomSier.cols.clear();
+                sierpinsky(bottomLeft,bottomRight,top,n,cpuGeomSier,gpuGeomSier); 
+            }
+            // Set TempN to n so we know that n didn't change
+            tempN=n;
+            tempFractal = fractal;
         }
-        tempN=n;
-        glDrawArrays(GL_TRIANGLES, 0, (int)cpuGeom.verts.size());
+        
+        if(n != tempN || fractal != tempFractal){ // Uniform Triangle Mass Center
+            cpuGeomSier.cols.clear();
+            cpuGeomSier.verts.clear();
+
+            if(n != tempN || fractal != tempFractal){ // Don't render unless something changed
+                cout << "Uniform Triangle Mass Center" << endl;
+                shader.use();
+                gpuGeomUMT.bind(); // Bind gpu geometry to OpenGL for use
+
+                // Clear the cpu geometry (all the colors and vertices)
+                cpuGeomUMT.verts.clear();
+                cpuGeomUMT.cols.clear();
+                sierpinsky(bottomLeft,bottomRight,top,n,cpuGeomUMT,gpuGeomUMT); 
+            }
+            // Set TempN to n so we know that n didn't change
+            tempN=n;
+            tempFractal = fractal;
+        }
+
+        if(fractal == 3){ // Koch Snowflake
+            cpuGeomSier.cols.clear();
+            cpuGeomSier.verts.clear();
+
+
+            if(n != tempN || fractal != tempFractal){ // Don't render unless something changed
+                cout << "Koch Snowflake" << endl;
+            }
+            // Set TempN to n so we know that n didn't change
+            tempN=n;
+            tempFractal = fractal;
+        }
+
+        if(fractal == 4){ // Dragon Curve
+            cpuGeomSier.cols.clear();
+            cpuGeomSier.verts.clear();
+
+
+            if(n != tempN || fractal != tempFractal){ // Don't render unless something changed
+                cout << "Dragon Curve" << endl;
+            }
+            // Set TempN to n so we know that n didn't change
+            tempN=n;
+            tempFractal = fractal;
+        }
+
+        glDrawArrays(GL_TRIANGLES, 0, (int) GLsizei(cpuGeomSier.verts.size()));
 		glDisable(GL_FRAMEBUFFER_SRGB); // disable sRGB for things like imgui
         
         window.swapBuffers(); // Swapping the double buffer
