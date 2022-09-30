@@ -66,6 +66,7 @@ double randomColor(){
 // Draw the triangle given 3 positions and color
 void drawTriangle(vec3 bottomLeft,vec3 bottomRight,vec3 top,vec3 color, CPU_Geometry &cpuGeom, GPU_Geometry &gpuGeom){
 
+    // push the vertices back into their vector
     cpuGeom.verts.push_back(bottomLeft);
     cpuGeom.verts.push_back(bottomRight);
     cpuGeom.verts.push_back(top);
@@ -96,10 +97,37 @@ void sierpinsky(vec3 a, vec3 c, vec3 b, int n, CPU_Geometry &cpuGeom, GPU_Geomet
     } 
 }
 
-void drawLine(vec3 a, vec3 b){
+void drawLine(vec3 a, vec3 b, vec3 color, CPU_Geometry &cpuGeom, GPU_Geometry &gpuGeom){
+ 
+    // push the vertices back into their vector
+    cpuGeom.verts.push_back(a);
+    cpuGeom.verts.push_back(b);
+
+    // colours (these should be in linear space)
+	cpuGeom.cols.push_back(color);
+	cpuGeom.cols.push_back(color);
+
+	gpuGeom.setVerts(cpuGeom.verts); // Send vertices to GPU 
+	gpuGeom.setCols(cpuGeom.cols); // Send colors to GPU 
 }
 
-void uniformTriangleMassCenter(vec3 a, vec3 c, vec3 b, int n, CPU_Geometry &cpuGeom, GPU_Geometry &gpuGeom){
+void uniformTriangleMassCenter(vec3 left, vec3 right, vec3 top, int n, CPU_Geometry &cpuGeom, GPU_Geometry &gpuGeom){
+    //Split points on triangle to midpoints
+    vec3 center = vec3((top.x+left.x+right.x)/3,(top.y+left.y+right.y)/3,0.0); // between top and left
+    
+    if(n>0){
+        uniformTriangleMassCenter(left,top,center,n-1, cpuGeom, gpuGeom);
+        uniformTriangleMassCenter(left,center,right,n-1, cpuGeom, gpuGeom);
+        uniformTriangleMassCenter(center,top,right,n-1, cpuGeom, gpuGeom);
+    }
+    else{
+        drawLine(left,right,vec3(randomColor(),randomColor(),randomColor()), cpuGeom, gpuGeom);
+        drawLine(left,top,vec3(randomColor(),randomColor(),randomColor()), cpuGeom, gpuGeom);
+        drawLine(top,right,vec3(randomColor(),randomColor(),randomColor()), cpuGeom, gpuGeom);
+        drawLine(left,center,vec3(randomColor(),randomColor(),randomColor()), cpuGeom, gpuGeom);
+        drawLine(top,center,vec3(randomColor(),randomColor(),randomColor()), cpuGeom, gpuGeom);
+        drawLine(right,center,vec3(randomColor(),randomColor(),randomColor()), cpuGeom, gpuGeom);
+    } 
 }
 
 void kochSnowflake(int n){
@@ -178,7 +206,7 @@ int main() {
                 // Clear the cpu geometry (all the colors and vertices)
                 cpuGeomUMT.verts.clear();
                 cpuGeomUMT.cols.clear();
-                sierpinsky(bottomLeft,bottomRight,top,n,cpuGeomUMT,gpuGeomUMT); 
+                uniformTriangleMassCenter(bottomLeft,bottomRight,top,n,cpuGeomUMT,gpuGeomUMT); 
             }
             // Set TempN to n so we know that n didn't change
             tempN=n;
@@ -211,6 +239,7 @@ int main() {
             tempFractal = fractal;
         }
 
+        glDrawArrays(GL_LINES, 0, (int) GLsizei(cpuGeomUMT.verts.size()));
         glDrawArrays(GL_TRIANGLES, 0, (int) GLsizei(cpuGeomSier.verts.size()));
 		glDisable(GL_FRAMEBUFFER_SRGB); // disable sRGB for things like imgui
         
