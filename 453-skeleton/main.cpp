@@ -18,6 +18,7 @@ using namespace glm;
 
 int n = 0;
 int fractal = 1;
+bool endProg = false;
 
 // Callbacks are for keyboard controls
 class MyCallbacks : public CallbackInterface {
@@ -43,7 +44,7 @@ class MyCallbacks : public CallbackInterface {
 			    cout << "Right n: " << n << endl;
 		    }
             // Switch to next fractal
-            if (key == GLFW_KEY_UP){
+            if (key == GLFW_KEY_UP && fractal < 4){
                 fractal++;
                 cout << "Fractal: " << fractal << endl; 
             }
@@ -52,12 +53,25 @@ class MyCallbacks : public CallbackInterface {
                 fractal--;
                 cout << "Fractal: " << fractal << endl; 
             }
+            // End code
+            if(key == GLFW_KEY_Q || key == GLFW_KEY_ESCAPE){
+                endProg = true;
+            }
         }
 	}
 
     private:
 	ShaderProgram& shader;
 };
+
+double degreesToRadians(double x){
+    return x * (M_PI/180.0);
+}
+
+double radiansToDegrees(double x){
+    return x * (180.0/M_PI);
+}
+
 
 double randomColor(){
     return (double)(rand()) / ((double)(RAND_MAX));
@@ -81,19 +95,19 @@ void drawTriangle(vec3 bottomLeft,vec3 bottomRight,vec3 top,vec3 color, CPU_Geom
 }
 
 // Draw sierpinsky given the number of recursions also returns number of vertices
-void sierpinsky(vec3 a, vec3 c, vec3 b, int n, CPU_Geometry &cpuGeom, GPU_Geometry &gpuGeom){
+void sierpinsky(vec3 left, vec3 right, vec3 top, int n, CPU_Geometry &cpuGeom, GPU_Geometry &gpuGeom){
     if(n>0){
         //Split points on triangle to midpoints
-        vec3 d = vec3((b.x+a.x)/2,(b.y+a.y)/2,0.0); // between top and left
-        vec3 e = vec3((b.x+c.x)/2,(b.y+c.y)/2,0.0); // between top and right
-        vec3 f = vec3((a.x+c.x)/2,(a.y+c.y)/2,0.0); // between left and right
+        vec3 topLeft = vec3((top.x+left.x)/2,(top.y+left.y)/2,0.0); // between top and left
+        vec3 topRight = vec3((top.x+right.x)/2,(top.y+right.y)/2,0.0); // between top and right
+        vec3 bottomMiddle = vec3((left.x+right.x)/2,(left.y+right.y)/2,0.0); // between left and right
         
-        sierpinsky(d,b,e,n-1, cpuGeom, gpuGeom);
-        sierpinsky(a,d,f,n-1, cpuGeom, gpuGeom);
-        sierpinsky(f,e,c,n-1, cpuGeom, gpuGeom);
+        sierpinsky(topLeft,top,topRight,n-1, cpuGeom, gpuGeom);
+        sierpinsky(left,topLeft,bottomMiddle,n-1, cpuGeom, gpuGeom);
+        sierpinsky(bottomMiddle,topRight,right,n-1, cpuGeom, gpuGeom);
     }
     else{
-        drawTriangle(a,c,b,vec3(randomColor(),randomColor(),randomColor()), cpuGeom, gpuGeom);
+        drawTriangle(left,right,top,vec3(randomColor(),randomColor(),randomColor()), cpuGeom, gpuGeom);
     } 
 }
 
@@ -130,19 +144,72 @@ void uniformTriangleMassCenter(vec3 left, vec3 right, vec3 top, int n, CPU_Geome
     } 
 }
 
-void kochSnowflake(int n){
+// Given a point and length a endpoint will be returned
+vec3 endpoint(vec3 a, double length){
+    return vec3(a.x*length,a.y*length,0.0);
+}
+
+// Given a pivot point and a length will give rotated line endpoint
+vec3 rotate(vec3 a, double length, double angle){
+    auto degree = degreesToRadians(angle);
+    return vec3(
+                a.x + length*cos(degree),
+                a.y + length*sin(degree),
+                0.0
+            );
+}
+
+
+double angleBetweenPointsRad(vec3 v1, vec3 v2){
+    return atan2(v1.y-v2.y,v1.x-v2.x);
+}
+
+double angleBetweenPointsDeg(vec3 v1, vec3 v2){
+    return radiansToDegrees(atan2(v1.y-v2.y,v1.x-v2.x));
+}
+
+void kochSnowflake(vec3 left,vec3 right,int n,CPU_Geometry &cpuGeom, GPU_Geometry &gpuGeom){
+    double length = sqrt(pow(left.x-right.x,2) + pow(left.y-right.y,2));
+    double thirdLength = length/3;
+    
+    vec3 middleLeft = rotate(left,thirdLength,angleBetweenPointsDeg(right,left)); 
+    vec3 middle = rotate(middleLeft,thirdLength,angleBetweenPointsDeg(right,left)+60); 
+    vec3 middleRight = rotate(right,thirdLength,angleBetweenPointsDeg(left,right)); 
+    
+    if(n==0){
+        drawLine(left,right,vec3(randomColor(),randomColor(),randomColor()),cpuGeom,gpuGeom); // Seg 1
+    }
+    else{
+        if(n>0){
+            kochSnowflake(middleLeft, middle, n-1, cpuGeom, gpuGeom);
+            kochSnowflake(left, middleLeft, n-1, cpuGeom, gpuGeom);
+            kochSnowflake(middle, middleRight, n-1, cpuGeom, gpuGeom);
+            kochSnowflake(middleRight, right, n-1, cpuGeom, gpuGeom);
+        }
+        else{
+            drawLine(left,middleLeft,vec3(randomColor(),randomColor(),randomColor()),cpuGeom,gpuGeom); // Seg 1
+            drawLine(middleLeft,middle,vec3(randomColor(),randomColor(),randomColor()),cpuGeom,gpuGeom); // Seg 2
+            drawLine(middle,middleRight,vec3(randomColor(),randomColor(),randomColor()),cpuGeom,gpuGeom); // Seg 3
+            drawLine(middleRight,right,vec3(randomColor(),randomColor(),randomColor()),cpuGeom,gpuGeom); // Seg 4
+        }
+    }
 } 
+
+
 
 void dragonCurve(int n){
 }
 
 
-
-
 int main() {
 	Log::debug("Starting main");
-
-	// WINDOW
+    cout << "\n\n\t----Controls----" << endl;
+    cout << "Up arrow to switch to next fractal" << endl;
+    cout << "Down arrow to switch to previous fractal" << endl;
+    cout << "Left arrow to decrease fractal iterations" << endl;
+    cout << "Right arrow to increase fractal iterations\n\n" << endl;
+	
+    // WINDOW
 	glfwInit();
 	Window window(800, 800, "CPSC 453"); // can set callbacks at construction if desired
 
@@ -160,12 +227,19 @@ int main() {
     CPU_Geometry cpuGeomUMT;
     GPU_Geometry gpuGeomUMT;
 
+    CPU_Geometry cpuGeomKoch;
+    GPU_Geometry gpuGeomKoch;
     double dwn_trns = 0.2;
     
-    // Sierpinsky's Triangle
+    // Upwards Triangle
     vec3 bottomLeft = vec3(cos(M_PI/2), sin(M_PI/2)-dwn_trns, 0.f); // Bottom left
     vec3 bottomRight = vec3(cos((4*M_PI)/3+(M_PI/2)), sin((4*M_PI)/3+(M_PI/2))-dwn_trns, 0.f); // Bottom right
     vec3 top = vec3(cos(((2*M_PI)/3)+(M_PI/2)), sin(((2*M_PI)/3)+(M_PI/2))-dwn_trns, 0.f); // Top
+    
+    // Upwards Triangle
+    vec3 bottomLeftCen = vec3(cos(M_PI/2), sin(M_PI/2), 0.f); // Bottom left
+    vec3 bottomRightCen = vec3(cos((4*M_PI)/3+(M_PI/2)), sin((4*M_PI)/3+(M_PI/2)), 0.f); // Bottom right
+    vec3 topCen = vec3(cos(((2*M_PI)/3)+(M_PI/2)), sin(((2*M_PI)/3)+(M_PI/2)), 0.f); // Top
 
 
     int tempN = -1; // Setting the tempN value to something which isn't default
@@ -173,12 +247,18 @@ int main() {
     
     // RENDER LOOP
 	while (!window.shouldClose()) {
+        if(endProg) return 0; // Close program if the user presses Q or Escape        
+
 		glfwPollEvents(); // Refresh screen
 
 		glEnable(GL_FRAMEBUFFER_SRGB); // Enable framebuffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear color and depth buffer  
         
         if(fractal == 1){ // Sierpinsky
+            
+            cpuGeomUMT.cols.clear();
+            cpuGeomUMT.verts.clear();
+            
             if(n != tempN || fractal != tempFractal){ // Don't render unless something changed
                 cout << "Sierpinsky's Triangle" << endl;
                 shader.use();
@@ -194,7 +274,7 @@ int main() {
             tempFractal = fractal;
         }
         
-        if(n != tempN || fractal != tempFractal){ // Uniform Triangle Mass Center
+        if(fractal == 2){ // Uniform Triangle Mass Center
             cpuGeomSier.cols.clear();
             cpuGeomSier.verts.clear();
 
@@ -208,18 +288,30 @@ int main() {
                 cpuGeomUMT.cols.clear();
                 uniformTriangleMassCenter(bottomLeft,bottomRight,top,n,cpuGeomUMT,gpuGeomUMT); 
             }
+
             // Set TempN to n so we know that n didn't change
             tempN=n;
             tempFractal = fractal;
         }
 
         if(fractal == 3){ // Koch Snowflake
+            cpuGeomUMT.cols.clear();
+            cpuGeomUMT.verts.clear();
+
             cpuGeomSier.cols.clear();
             cpuGeomSier.verts.clear();
-
-
+            
             if(n != tempN || fractal != tempFractal){ // Don't render unless something changed
                 cout << "Koch Snowflake" << endl;
+                shader.use();
+                gpuGeomKoch.bind(); // Bind gpu geometry to OpenGL for use
+
+                // Clear the cpu geometry (all the colors and vertices)
+                cpuGeomKoch.verts.clear();
+                cpuGeomKoch.cols.clear();
+                kochSnowflake(bottomLeftCen,bottomRightCen,n,cpuGeomKoch,gpuGeomKoch); 
+                kochSnowflake(bottomRightCen,topCen,n,cpuGeomKoch,gpuGeomKoch); 
+                kochSnowflake(topCen,bottomLeftCen,n,cpuGeomKoch,gpuGeomKoch); 
             }
             // Set TempN to n so we know that n didn't change
             tempN=n;
@@ -227,6 +319,10 @@ int main() {
         }
 
         if(fractal == 4){ // Dragon Curve
+
+            cpuGeomKoch.cols.clear();
+            cpuGeomKoch.verts.clear();
+            
             cpuGeomSier.cols.clear();
             cpuGeomSier.verts.clear();
 
@@ -241,6 +337,7 @@ int main() {
 
         glDrawArrays(GL_LINES, 0, (int) GLsizei(cpuGeomUMT.verts.size()));
         glDrawArrays(GL_TRIANGLES, 0, (int) GLsizei(cpuGeomSier.verts.size()));
+        glDrawArrays(GL_LINES, 0, (int) GLsizei(cpuGeomKoch.verts.size()));
 		glDisable(GL_FRAMEBUFFER_SRGB); // disable sRGB for things like imgui
         
         window.swapBuffers(); // Swapping the double buffer
