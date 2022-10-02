@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/detail/qualifier.hpp>
 #include <glm/ext/scalar_constants.hpp>
 #include <glm/fwd.hpp>
 #include <iostream>
@@ -12,6 +13,7 @@
 #include "ShaderProgram.h"
 #include "Window.h"
 #include <random>
+#include <vector>
 
 using namespace std;
 using namespace glm;
@@ -63,6 +65,7 @@ class MyCallbacks : public CallbackInterface {
     private:
 	ShaderProgram& shader;
 };
+
 
 double degreesToRadians(double x){
     return x * (M_PI/180.0);
@@ -144,9 +147,13 @@ void uniformTriangleMassCenter(vec3 left, vec3 right, vec3 top, int n, CPU_Geome
     } 
 }
 
-// Given a point and length a endpoint will be returned
-vec3 endpoint(vec3 a, double length){
-    return vec3(a.x*length,a.y*length,0.0);
+
+double angleBetweenPointsRad(vec3 v1, vec3 v2){
+    return atan2(v1.y-v2.y,v1.x-v2.x);
+}
+
+double angleBetweenPointsDeg(vec3 v1, vec3 v2){
+    return radiansToDegrees(atan2(v1.y-v2.y,v1.x-v2.x));
 }
 
 // Given a pivot point and a length will give rotated line endpoint
@@ -157,15 +164,6 @@ vec3 rotate(vec3 a, double length, double angle){
                 a.y + length*sin(degree),
                 0.0
             );
-}
-
-
-double angleBetweenPointsRad(vec3 v1, vec3 v2){
-    return atan2(v1.y-v2.y,v1.x-v2.x);
-}
-
-double angleBetweenPointsDeg(vec3 v1, vec3 v2){
-    return radiansToDegrees(atan2(v1.y-v2.y,v1.x-v2.x));
 }
 
 void kochSnowflake(vec3 left,vec3 right,int n,CPU_Geometry &cpuGeom, GPU_Geometry &gpuGeom){
@@ -195,9 +193,40 @@ void kochSnowflake(vec3 left,vec3 right,int n,CPU_Geometry &cpuGeom, GPU_Geometr
     }
 } 
 
+string dragonStringConvert(string a){
+    auto b = a;
+    unsigned long length = b.length();
+ 
+    // Swap character starting from two
+    // corners
+    for (int i = 0; i < length / 2; i++){
+        swap(b[i], b[length - i - 1]);
+    }
+   
+    return b;
+}
 
+string dragonCurveString;
 
-void dragonCurve(int n){
+void dragonCurve(vec3 left,vec3 right,int n,CPU_Geometry &cpuGeom, GPU_Geometry &gpuGeom){
+    /*for(int i = 0; i < n; i++){
+        // Step 1 add right turn
+        dragonCurveString += "r";
+        // Step 2 flip the original string and replace r with l and l with r and append to original
+        for(char a:dragonStringConvert(dragonCurveString)){
+            if(a == 'r'){
+                dragonCurveString += 'l';
+            }
+            else{
+                dragonCurveString += 'r';
+            }
+        }
+    }
+
+    cout << dragonCurveString << endl;
+    */
+
+    drawLine(left,right,vec3(randomColor(),randomColor(),randomColor()),cpuGeom,gpuGeom);
 }
 
 
@@ -207,15 +236,17 @@ int main() {
     cout << "Up arrow to switch to next fractal" << endl;
     cout << "Down arrow to switch to previous fractal" << endl;
     cout << "Left arrow to decrease fractal iterations" << endl;
-    cout << "Right arrow to increase fractal iterations\n\n" << endl;
+    cout << "Right arrow to increase fractal iterations" << endl;
+    cout << "Q or Escape to Quit" << endl;
+    cout << "R to recompile/refresh\n\n" << endl;
 	
     // WINDOW
 	glfwInit();
 	Window window(800, 800, "CPSC 453"); // can set callbacks at construction if desired
 
 	GLDebug::enable();
-
-	// SHADERS
+	
+    // SHADERS
 	ShaderProgram shader("shaders/test.vert", "shaders/test.frag");
 
 	// CALLBACKS
@@ -229,6 +260,10 @@ int main() {
 
     CPU_Geometry cpuGeomKoch;
     GPU_Geometry gpuGeomKoch;
+    
+    CPU_Geometry cpuGeomDrag;
+    GPU_Geometry gpuGeomDrag;
+   
     double dwn_trns = 0.2;
     
     // Upwards Triangle
@@ -236,10 +271,14 @@ int main() {
     vec3 bottomRight = vec3(cos((4*M_PI)/3+(M_PI/2)), sin((4*M_PI)/3+(M_PI/2))-dwn_trns, 0.f); // Bottom right
     vec3 top = vec3(cos(((2*M_PI)/3)+(M_PI/2)), sin(((2*M_PI)/3)+(M_PI/2))-dwn_trns, 0.f); // Top
     
-    // Upwards Triangle
+    // Centered Upwards Triangle
     vec3 bottomLeftCen = vec3(cos(M_PI/2), sin(M_PI/2), 0.f); // Bottom left
     vec3 bottomRightCen = vec3(cos((4*M_PI)/3+(M_PI/2)), sin((4*M_PI)/3+(M_PI/2)), 0.f); // Bottom right
     vec3 topCen = vec3(cos(((2*M_PI)/3)+(M_PI/2)), sin(((2*M_PI)/3)+(M_PI/2)), 0.f); // Top
+
+    // Dragon Curve
+    vec3 left = vec3(0.5,0.0,0.0);
+    vec3 right = vec3(-0.5,0.0,0.0);
 
 
     int tempN = -1; // Setting the tempN value to something which isn't default
@@ -255,9 +294,12 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear color and depth buffer  
         
         if(fractal == 1){ // Sierpinsky
-            
+             
             cpuGeomUMT.cols.clear();
             cpuGeomUMT.verts.clear();
+            
+            cpuGeomKoch.cols.clear();
+            cpuGeomKoch.verts.clear();
             
             if(n != tempN || fractal != tempFractal){ // Don't render unless something changed
                 cout << "Sierpinsky's Triangle" << endl;
@@ -277,6 +319,9 @@ int main() {
         if(fractal == 2){ // Uniform Triangle Mass Center
             cpuGeomSier.cols.clear();
             cpuGeomSier.verts.clear();
+ 
+            cpuGeomKoch.cols.clear();
+            cpuGeomKoch.verts.clear();
 
             if(n != tempN || fractal != tempFractal){ // Don't render unless something changed
                 cout << "Uniform Triangle Mass Center" << endl;
@@ -329,6 +374,13 @@ int main() {
 
             if(n != tempN || fractal != tempFractal){ // Don't render unless something changed
                 cout << "Dragon Curve" << endl;
+                shader.use();
+                gpuGeomDrag.bind(); // Bind gpu geometry to OpenGL for use
+
+                // Clear the cpu geometry (all the colors and vertices)
+                cpuGeomDrag.verts.clear();
+                cpuGeomDrag.cols.clear();
+                dragonCurve(left,right,n,cpuGeomDrag,gpuGeomDrag); 
             }
             // Set TempN to n so we know that n didn't change
             tempN=n;
@@ -338,6 +390,7 @@ int main() {
         glDrawArrays(GL_LINES, 0, (int) GLsizei(cpuGeomUMT.verts.size()));
         glDrawArrays(GL_TRIANGLES, 0, (int) GLsizei(cpuGeomSier.verts.size()));
         glDrawArrays(GL_LINES, 0, (int) GLsizei(cpuGeomKoch.verts.size()));
+        glDrawArrays(GL_LINES, 0, (int) GLsizei(cpuGeomDrag.verts.size()));
 		glDisable(GL_FRAMEBUFFER_SRGB); // disable sRGB for things like imgui
         
         window.swapBuffers(); // Swapping the double buffer
