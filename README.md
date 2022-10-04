@@ -1,4 +1,4 @@
-# 453-skeleton
+# 453-assignment-1
 ----Controls----
 Up arrow to switch to next fractal
 Down arrow to switch to previous fractal
